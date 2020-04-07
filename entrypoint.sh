@@ -5,9 +5,12 @@ file_name=$1
 tag_version=$2
 bump_files=$3
 
+: "${PREFIX=v}"
+
 echo
 echo "Input file name: $file_name : $tag_version"
 echo "Bump files: $bump_files"
+echo "PREFIX: '${PREFIX}'"
 
 echo "Git Head Ref: ${GITHUB_HEAD_REF}"
 echo "Git Base Ref: ${GITHUB_BASE_REF}"
@@ -42,6 +45,7 @@ echo "Extracted string: $extract_string"
 
 if [[ "$extract_string" == "" ]]; then 
     echo "Invalid version string"
+    extract_string=0.1.0
     exit 0
 else
     echo "Valid version string found"
@@ -53,18 +57,22 @@ patch=$(semver get patch "$extract_string")
 build=$(semver get build "$extract_string")
 
 if [[ $build = "" ]]; then
-    oldver="$major.$minor.$patch"
-    newver=$(semver bump patch "$major.$minor.$patch")
+    oldver="${PREFIX}$major.$minor.$patch"
+    newver="${PREFIX}$(semver bump patch "$major.$minor.$patch")"
 else
-    oldver="$major.$minor.$patch.$build"
-    newver=$(semver bump build "$major.$minor.$patch.$build")
+    oldver="${PREFIX}$major.$minor.$patch.$build"
+    newver="${PREFIX}$(semver bump build "$major.$minor.$patch.$build")"
 fi
 
 echo "Old Ver: $oldver"
 echo "Updated version: $newver" 
 
 newcontent=${content/$oldver/$newver}
-echo "$newcontent" > "$file_name"
+echo -n "$newcontent" > "$file_name"
+
+for file in $bump_files ; do
+    sed -i -e s/"$oldver"/"$newver"/g "$file"
+done
 
 git add -A 
 git commit -m "Incremented to ${newver}"  -m "[skip ci]"
