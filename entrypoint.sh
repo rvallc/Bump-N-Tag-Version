@@ -66,8 +66,10 @@ echo -n "${content/$oldver/$newver}" > "$VERSION_FILE"
 
 if [ "$BUMP_FILES" = "**" ] ; then
     # replace version patterns in all text files following a line containing [bump if $PREFIX]
-    find . -type f -exec sed -i \
-         -e "/[bump if $PREFIX]/{n;s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/${newver}/g;}" {} \;
+    git ls-files | while IFS= read -r f ; do
+        LC_CTYPE=C LANG=C sed -i \
+                -e "/\[bump if $PREFIX\]/{n;s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/${newver}/g;}" "$f"
+    done
 
 else
     # replace the exact version in a fixed list of files
