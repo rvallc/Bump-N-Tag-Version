@@ -67,11 +67,13 @@ fi
 echo "Old Ver: $oldver"
 echo "Updated version: $newver" 
 
-newcontent=${content/$oldver/$newver}
-echo -n "$newcontent" > "$file_name"
+echo -n "${content/$oldver/$newver}" > "$file_name"
 
 for file in $bump_files ; do
     sed -i -e s/"$oldver"/"$newver"/g "$file"
+    echo "Updated '$file'"
+    cat "$file"
+    echo "--"
 done
 
 git add -A 
