@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -x
 
 file_name=$1
 tag_version=$2
@@ -66,7 +67,7 @@ echo -n "${content/$oldver/$newver}" > "$file_name"
 
 if [ "$BUMP_FILES" = "**" ] ; then
     # replace version patterns in all text files following a line containing [bump if $PREFIX]
-    find . -type f -exec sed -i 'e' \
+    find . -type f -exec sed -i \
          -e "/[bump if $PREFIX]/{n;s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/${newver}/g;}" {} \;
 fi
 
