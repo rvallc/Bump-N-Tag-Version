@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-set -x
 
 VERSION_FILE=$1
 tag_version=$2
