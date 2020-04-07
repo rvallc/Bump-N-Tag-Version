@@ -3,10 +3,10 @@ set -e
 
 file_name=$1
 tag_version=$2
-bump_files=$3
 
 : "${PREFIX=v}"
 : "${DEFAULT_BUMP=patch}"
+: "${BUMP_FILES=}"
 
 echo
 echo "Input file name: $file_name : $tag_version"
@@ -55,6 +55,7 @@ fi
 major=$(semver get major "$extract_string")
 minor=$(semver get minor "$extract_string")
 patch=$(semver get patch "$extract_string")
+
 oldver="$major.$minor.$patch"
 newver=$(semver bump "${DEFAULT_BUMP}" "$extract_string")
 
@@ -63,7 +64,12 @@ echo "Updated version: $newver"
 
 echo -n "${content/$oldver/$newver}" > "$file_name"
 
-for file in $bump_files ; do
+if [ "$BUMP_FILES" = "**" ] ; then
+    # replace version patterns in all text files following a line containing [bump if $PREFIX]
+    find . -type f -exec sed -i '' -E "/[bump if $PREFIX]/{n;s/[0-9]+\.[0-9]+\.[0-9]+/${newver}/g;}" {} \;
+fi
+
+for file in $BUMP_FILES ; do
     sed -i -e s/"$oldver"/"$newver"/g "$file"
     echo "Updated '$file'"
     cat "$file"
