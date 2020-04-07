@@ -2,7 +2,7 @@
 set -e
 set -x
 
-file_name=$1
+VERSION_FILE=$1
 tag_version=$2
 
 : "${PREFIX=v}"
@@ -10,7 +10,7 @@ tag_version=$2
 : "${BUMP_FILES=}"
 
 echo
-echo "Input file name: $file_name : $tag_version"
+echo "Input file name: $VERSION_FILE : $tag_version"
 echo "Bump files: $bump_files"
 echo "PREFIX: '${PREFIX}'"
 
@@ -35,8 +35,8 @@ fi
 
 echo "Git Checkout"
 
-if test -f "$file_name" ; then
-    content=$(cat "$file_name")
+if test -f "$VERSION_FILE" ; then
+    content=$(cat "$VERSION_FILE")
 else
     content=$(echo "-- File doesn't exist --")
 fi
@@ -63,20 +63,20 @@ newver=$(semver bump "${DEFAULT_BUMP}" "$extract_string")
 echo "Old Ver: $oldver"
 echo "Updated version: $newver" 
 
-echo -n "${content/$oldver/$newver}" > "$file_name"
+echo -n "${content/$oldver/$newver}" > "$VERSION_FILE"
 
 if [ "$BUMP_FILES" = "**" ] ; then
     # replace version patterns in all text files following a line containing [bump if $PREFIX]
     find . -type f -exec sed -i \
          -e "/[bump if $PREFIX]/{n;s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/${newver}/g;}" {} \;
-fi
 
-for file in $BUMP_FILES ; do
-    sed -i -e s/"$oldver"/"$newver"/g "$file"
-    echo "Updated '$file'"
-    cat "$file"
-    echo "done."
-done
+else
+    # replace the exact version in a fixed list of files
+    for file in $BUMP_FILES ; do
+        sed -i -e s/"$oldver"/"$newver"/g "$file"
+        echo "Updated '$file'"
+    done
+fi
 
 git add -A 
 git commit -m "Incremented to ${newver}"  -m "[skip ci]"
