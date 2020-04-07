@@ -47,27 +47,24 @@ else
     echo "Valid version string found"
 fi
 
-major=$(echo $extract_string | cut -d'.' -f1) 
-major=${major:(-2)}
-minor=$(echo $extract_string | cut -d'.' -f2)
-patch=$(echo $extract_string | cut -d'.' -f3)
-build=$(echo $extract_string | cut -d'.' -f4)
+major=$(semver get major "$extract_string")
+minor=$(semver get minor "$extract_string")
+patch=$(semver get patch "$extract_string")
+build=$(semver get build "$extract_string")
 
 if [[ $build = "" ]]; then
-    oldver=$(echo $major.$minor.$patch)
-    patch=$(expr $patch + 1)
-    newver=$(echo $major.$minor.$patch)
+    oldver="$major.$minor.$patch"
+    newver=$(semver bump patch "$major.$minor.$patch")
 else
-    oldver=$(echo $major.$minor.$patch.$build)
-    build=$(expr $build + 1)
-    newver=$(echo $major.$minor.$patch.$build)
+    oldver="$major.$minor.$patch.$build"
+    newver=$(semver bump build "$major.$minor.$patch.$build")
 fi
 
-echo "\nOld Ver: $oldver"
-echo "\nUpdated version: $newver" 
+echo "Old Ver: $oldver"
+echo "Updated version: $newver" 
 
-newcontent=$(echo ${content/$oldver/$newver})
-echo $newcontent > $file_name
+newcontent=${content/$oldver/$newver}
+echo "$newcontent" > "$file_name"
 
 git add -A 
 git commit -m "Incremented to ${newver}"  -m "[skip ci]"
@@ -78,6 +75,8 @@ echo "Git Push"
 
 git push --follow-tags "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:$github_ref
 
+echo
+echo "End of Action"
+echo
 
-echo "\nEnd of Action\n\n"
 exit 0

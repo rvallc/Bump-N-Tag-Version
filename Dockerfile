@@ -5,6 +5,9 @@ FROM alpine:3.10
 #RUN apt-get update && apt-get install -y --no-install-recommends -y git
 RUN apk add --no-cache git sed bash
 
+COPY ./contrib/semver ./contrib/semver
+RUN install ./contrib/semver /usr/local/bin
+
 # Copies your code file from your action repository to the filesystem path `/` of the container
 COPY entrypoint.sh /entrypoint.sh
 
