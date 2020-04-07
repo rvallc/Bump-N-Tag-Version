@@ -4,6 +4,8 @@ GitHub Action program to handle application version file like
 auto-increment of version number based on GitHub events. This action
 program supports "push" and "pull-request" events.
 
+This is based on `vinodhraj/Bump-N-Tag-Version` and `anothrNick/github-tag-action`.
+
 ## Inputs
 
 ### `file_name`
@@ -73,23 +75,28 @@ VERSION 1.2.4.55
 
 ## Example usage
 
-```
-name: App Version Actions
-on: [push, pull_request]  # Recommended to use either of one event
+Only bump when `master` is pushed to.
 
+```
+name: Bump version
+on:
+  push:
+    branches:
+      - master
 jobs:
-  Version-check:
+  build:
     runs-on: ubuntu-latest
-    name: Bump-N-Tag Version
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v2
     - name: Increment version
-      id: version   
-      uses: vinodhraj/Bump-N-Tag-Version@master
+      id: version
+      uses: rvallc/Bump-N-Tag-Version@master
       with:
         file_name: './VERSION'
         tag_version: "true"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BUMP_FILES: '**'
+        PREFIX: v
 ```
 
