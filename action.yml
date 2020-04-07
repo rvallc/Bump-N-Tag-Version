@@ -14,6 +14,10 @@ inputs:
     description: 'States whether to create tag for this version or not'
     required: false
     default: 'false'
+  bump_files: # id
+    description: 'Files to update the version number in'
+    required: false
+    default:
 outputs:
   app_version: # id of output
     description: 'Version from given file'
@@ -23,3 +27,4 @@ runs:
   args:
     - ${{ inputs.file_name }} 
     - ${{ inputs.tag_version }}
+    - ${{ inputs.bump_files }}
