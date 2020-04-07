@@ -53,6 +53,9 @@ __build__ = 0x000000
     and the `0.3.4` will be updated from the `file_name` file's version, regardless
     of whether it matches the *oldver*.
 
+### DRYRUN
+
+Set this to `true` to prevent the tag and commit from executing.
 
 ### `Sample **VERSION** file content`
 
@@ -64,12 +67,14 @@ build number. This program by default will always increment last
 segment part of version string.
 
 ```
+1.2.3
 v1.2.3
 v 1.2.3
 ver 1.2.3
 version 1.2.3
 VER 2.3.6.4
 VERSION 1.2.4.55
+"1.2.3"
 ```
 
 

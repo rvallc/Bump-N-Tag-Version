@@ -7,6 +7,7 @@ tag_version=$2
 : "${PREFIX=v}"
 : "${DEFAULT_BUMP=patch}"
 : "${BUMP_FILES=}"
+: "${DRYRUN=false}"
 
 echo
 echo "Input file name: $VERSION_FILE : $tag_version"
@@ -31,18 +32,25 @@ else
     git checkout "$github_ref"
 fi
 
-
 echo "Git Checkout"
 
 if test -f "$VERSION_FILE" ; then
     content=$(cat "$VERSION_FILE")
 else
-    content=$(echo "-- File doesn't exist --")
+    content=$(echo "-- File '$VERSION_FILE' doesn't exist --")
 fi
 
 echo "File Content: $content"
-extract_string=$(echo "$content" | awk '/^([[:space:]])*(v|ver|version|V|VER|VERSION)?([[:blank:]])*([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{1,3})(\.([0-9]{1,5}))?[[:space:]]*$/{print $0}')
+extract_string=$(echo "$content" | awk '/^([[:space:]])*(v|ver|version|V|VER|VERSION)?([[:blank:]])*([0-9]{1,2})\.([0-9]{1,3})\.([0-9]{1,4})(\.([0-9]{1,5}))?[[:space:]]*$/{print $0}')
 echo "Extracted string: $extract_string"
+
+if [[ "$extract_string" == "" ]]; then
+    #
+    # look for the first string like "1.2.3"
+    #
+    extract_string=$(echo "$content" | awk 'match($0,/"(([0-9]{1,2})\.([0-9]{1,3})\.([0-9]{1,4})(\.([0-9]{1,5}))?)"/){print substr($0,RSTART+1,RLENGTH-2); exit}')
+    echo "Extracted string: $extract_string"
+fi
 
 if [[ "$extract_string" == "" ]]; then 
     echo "Invalid version string"
@@ -51,6 +59,11 @@ if [[ "$extract_string" == "" ]]; then
 else
     echo "Valid version string found"
 fi
+
+#
+# TODO: check if commit message in `git log -n 1` contains any of
+# #major #minor #patch, if so, use it for DEFAULT_BUMP
+#
 
 major=$(semver get major "$extract_string")
 minor=$(semver get minor "$extract_string")
@@ -62,31 +75,40 @@ newver=$(semver bump "${DEFAULT_BUMP}" "$extract_string")
 echo "Old Ver: $oldver"
 echo "Updated version: $newver" 
 
-echo -n "${content/$oldver/$newver}" > "$VERSION_FILE"
-
 if [ "$BUMP_FILES" = "**" ] ; then
+    #
     # replace version patterns in all text files following a line containing [bump if $PREFIX]
+    #
     git ls-files | while IFS= read -r f ; do
         LC_CTYPE=C LANG=C sed -i \
-                -e "/\[bump if $PREFIX\]/{n;s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/${newver}/g;}" "$f"
+                -e "/\[bump if $PREFIX\]/{n;s/[0-9]\{1,2\}\.[0-9]\{1,3\}\.[0-9]\{1,4\}/${newver}/g;}" "$f"
     done
-
-else
-    # replace the exact version in a fixed list of files
-    for file in $BUMP_FILES ; do
-        sed -i -e s/"$oldver"/"$newver"/g "$file"
-        echo "Updated '$file'"
-    done
+    BUMP_FILES=
 fi
 
-git add -A 
-git commit -m "Incremented to ${newver}"  -m "[skip ci]"
-([ -n "$tag_version" ] && [ "$tag_version" = "true" ]) && (git tag -a "${PREFIX}${newver}" -m "[skip ci]") || echo "No tag created"
+#
+# replace the exact version in a fixed list of files
+#
+for file in "$VERSION_FILE" $BUMP_FILES ; do
+    sed -i -e s/"$oldver"/"$newver"/g "$file"
+done
 
-git show-ref
-echo "Git Push"
+#
+# make a tag and commit to git and push to github
+#
+if "${DRYRUN}"; then
+    echo "[DRYRUN] not committing"
+    ([ -n "$tag_version" ] && [ "$tag_version" = "true" ]) && (true) || echo "[DRYRUN] No tag would be created."
+else
+    git add -A 
+    git commit -m "Incremented to ${newver}"  -m "[skip ci]"
+    ([ -n "$tag_version" ] && [ "$tag_version" = "true" ]) && (git tag -a "${PREFIX}${newver}" -m "[skip ci]") || echo "No tag created"
 
-git push --follow-tags "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:$github_ref
+    git show-ref
+    echo "Git Push"
+
+    git push --follow-tags "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:$github_ref
+fi
 
 echo
 echo "End of Action"
