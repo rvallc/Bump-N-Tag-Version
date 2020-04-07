@@ -3,7 +3,7 @@ FROM alpine:3.10
 
 # Install git package
 #RUN apt-get update && apt-get install -y --no-install-recommends -y git
-RUN apk add --no-cache git sed bash find
+RUN apk add --no-cache git sed bash
 
 COPY ./contrib/semver ./contrib/semver
 RUN install ./contrib/semver /usr/local/bin
