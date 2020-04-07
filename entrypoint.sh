@@ -6,6 +6,7 @@ tag_version=$2
 bump_files=$3
 
 : "${PREFIX=v}"
+: "${DEFAULT_BUMP=patch}"
 
 echo
 echo "Input file name: $file_name : $tag_version"
@@ -54,15 +55,8 @@ fi
 major=$(semver get major "$extract_string")
 minor=$(semver get minor "$extract_string")
 patch=$(semver get patch "$extract_string")
-build=$(semver get build "$extract_string")
-
-if [[ $build = "" ]]; then
-    oldver="${PREFIX}$major.$minor.$patch"
-    newver="${PREFIX}$(semver bump patch "$major.$minor.$patch")"
-else
-    oldver="${PREFIX}$major.$minor.$patch.$build"
-    newver="${PREFIX}$(semver bump build "$major.$minor.$patch.$build")"
-fi
+oldver="$major.$minor.$patch"
+newver=$(semver bump "${DEFAULT_BUMP}" "$extract_string")
 
 echo "Old Ver: $oldver"
 echo "Updated version: $newver" 
@@ -73,12 +67,12 @@ for file in $bump_files ; do
     sed -i -e s/"$oldver"/"$newver"/g "$file"
     echo "Updated '$file'"
     cat "$file"
-    echo "--"
+    echo "done."
 done
 
 git add -A 
 git commit -m "Incremented to ${newver}"  -m "[skip ci]"
-([ -n "$tag_version" ] && [ "$tag_version" = "true" ]) && (git tag -a "${newver}" -m "[skip ci]") || echo "No tag created"
+([ -n "$tag_version" ] && [ "$tag_version" = "true" ]) && (git tag -a "${PREFIX}${newver}" -m "[skip ci]") || echo "No tag created"
 
 git show-ref
 echo "Git Push"
