@@ -10,8 +10,9 @@ tag_version=$2
 : "${DRYRUN=false}"
 
 echo
-echo "Input file name: $VERSION_FILE : $tag_version"
-echo "Bump files: $bump_files"
+echo "Input file name: $VERSION_FILE"
+echo "Tag version? ${tag_version}"
+echo "Bump files: ${BUMP_FILES}"
 echo "PREFIX: '${PREFIX}'"
 
 echo "Git Head Ref: ${GITHUB_HEAD_REF}"
@@ -64,6 +65,13 @@ fi
 # TODO: check if commit message in `git log -n 1` contains any of
 # #major #minor #patch, if so, use it for DEFAULT_BUMP
 #
+# get commit logs and determine home to bump the version
+# supports #major, #minor, #patch (anything else will be 'minor')
+case "$(git log -n 1)" in
+    *#major*) DEFAULT_BUMP="major" ;;
+    *#minor*) DEFAULT_BUMP="minor" ;;
+    *#patch*) DEFAULT_BUMP="patch" ;;
+esac
 
 major=$(semver get major "$extract_string")
 minor=$(semver get minor "$extract_string")
