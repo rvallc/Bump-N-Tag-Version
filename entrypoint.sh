@@ -102,8 +102,10 @@ if [ "$tag_commit" == "$commit" ]; then
 fi
 
 if [ -z "$tag" ]; then
+    # the entire log!
     log=$(git log --pretty='%B')
 else
+    # log since last version tag
     log=$(git log "$tag..HEAD" --pretty='%B')
 fi
 
