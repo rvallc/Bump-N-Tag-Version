@@ -17,6 +17,7 @@ trap onerror ERR
 #
 VERSION_FILE=$1
 tag_version=$2
+DO_FILE_BUMP=$3
 
 #
 # Environment variables
@@ -47,7 +48,6 @@ git config --global user.email "UtilimarcBot@utilimarc.com"
 git config --global user.name "Utilimarc GitActionBot"
 
 # https://help.github.com/en/actions/configuring-and-managing-workflows/using-environment-variables
-github_ref=""
 
 if test "${GITHUB_EVENT_NAME}" = "push"
 then
@@ -124,7 +124,11 @@ minor=$(semver get minor "$extract_string")
 patch=$(semver get patch "$extract_string")
 
 oldver="$major.$minor.$patch"
-newver=$(semver bump "${DEFAULT_BUMP}" "$extract_string")
+if "${DO_FILE_BUMP}" ; then
+    newver=$(semver bump "${DEFAULT_BUMP}" "$extract_string")
+else
+    newver=$oldver
+fi
 
 echo "Old Ver: $oldver"
 echo "Updated version: $newver" 
@@ -143,25 +147,29 @@ fi
 #
 # replace the exact version in a fixed list of files
 #
-for file in "$VERSION_FILE" $BUMP_FILES ; do
-    sed -i -e s/"$oldver"/"$newver"/g "$file"
-done
+if "${DO_FILE_BUMP}" ; then
+    for file in "$VERSION_FILE" $BUMP_FILES ; do
+        sed -i -e s/"$oldver"/"$newver"/g "$file"
+    done
+fi
 
 #
 # make a tag and commit to git and push to github
 #
 if "${DRYRUN}"; then
-    echo "[DRYRUN] not committing"
+    echo "[DRYRUN] not committing: ${PREFIX}${newver}"
     ([ -n "$tag_version" ] && [ "$tag_version" = "true" ]) && (true) || echo "[DRYRUN] No tag would be created."
 else
-    git add -A 
-    git commit -m "Incremented to ${newver}"  -m "[skip ci]"
+    if "${DO_FILE_BUMP}" ; then
+        git add -A
+        git commit -m "Incremented to ${newver}"  -m "[skip ci]"
+    fi
     ([ -n "$tag_version" ] && [ "$tag_version" = "true" ]) && (git tag -a "${PREFIX}${newver}" -m "[skip ci]") || echo "No tag created"
 
     git show-ref
     echo "Git Push"
 
-    git push --follow-tags "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:$github_ref
+    git push --follow-tags "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:"$github_ref"
 fi
 
 echo
