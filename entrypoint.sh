@@ -26,6 +26,7 @@ DO_FILE_BUMP=$3
 : "${DEFAULT_BUMP=patch}"
 : "${BUMP_FILES=}"
 : "${DRYRUN=false}"
+: "${DEBUG=false}"
 
 #
 # Status
@@ -42,6 +43,10 @@ echo "Git Event Name: ${GITHUB_EVENT_NAME}"
 echo
 echo "Starting Git Operations"
 echo
+
+if $DEBUG ; then
+    set -x
+fi
 
 # who this commit will be done as
 git config --global user.email "UtilimarcBot@utilimarc.com"
@@ -131,7 +136,7 @@ else
 fi
 
 echo "Old Ver: $oldver"
-echo "Updated version: $newver" 
+echo "Updated version: $newver"
 
 if [ "$BUMP_FILES" = "**" ]; then
     #
