@@ -95,21 +95,29 @@ git fetch --tags
 
 # get latest tag that looks like a semver (with PREFIX)
 tag=$(git for-each-ref --sort=-v:refname --count=1 --format '%(refname)' "refs/tags/${PREFIX}[0-9]*.[0-9]*.[0-9]*" | cut -d / -f 3-)
-tag_commit=$(git rev-list -n 1 "$tag")
 
-# get current commit hash for tag
-commit=$(git rev-parse HEAD)
-
-if [ "$tag_commit" == "$commit" ]; then
-    echo "No new commits since previous tag. Skipping..."
-    echo ::set-output "name=tag::$tag"
-    exit 0
-fi
-
+# get relevant git-log to look for bump commands in
 if [ -z "$tag" ]; then
+    # First time tagging.
+    
     # the entire log!
-    log=$(git log --pretty='%B')
+    # log=$(git log --pretty='%B')
+
+    # dont need bump control if first ever tag
+    log=
 else
+    # get the commit 
+    tag_commit=$(git rev-list -n 1 "$tag")
+
+    # get current commit hash for tag
+    cur_commit=$(git rev-parse HEAD)
+
+    if [ "$tag_commit" == "$cur_commit" ]; then
+        echo "No new commits since previous version tag. Skipping..."
+        echo ::set-output "name=tag::$tag"
+        exit 0
+    fi
+    
     # log since last version tag
     log=$(git log "$tag..HEAD" --pretty='%B')
 fi
