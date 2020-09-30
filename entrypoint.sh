@@ -78,7 +78,7 @@ if [[ "$extract_string" == "" ]]; then
     #
     # look for the first string like "1.2.3"
     #
-    extract_string=$(echo "$content" | awk 'match($0,/"(([0-9]{1,2})\.([0-9]{1,3})\.([0-9]{1,4}))"/){print substr($0,RSTART+1,RLENGTH-2); exit}')
+    extract_string=$(echo "$content" | awk "match(\$0,/['\"](([0-9]{1,2})\.([0-9]{1,3})\.([0-9]{1,4}))['\"]/){print substr(\$0,RSTART+1,RLENGTH-2); exit}")
     echo "Extracted string: $extract_string"
 fi
 
